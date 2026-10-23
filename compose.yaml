@@ -1,0 +1,39 @@
+# Local test topology. Mirrors the Railway service graph, plus a test-only mock provider:
+#   app  -> HarnessRouter Community Edition (official image, unmodified): console, gateway and
+#           runner in one container; SQLite, files and the installed agent CLIs on a /data volume.
+#   mock -> a stub OpenAI-compatible provider (tests/mock/mock_openai.py) so the tests can run a
+#           real agent turn without a real provider key. NOT part of the Railway template.
+name: harnessrouter-railway-test
+
+networks:
+  default:
+    name: harnessrouter-railway-test
+
+services:
+  app:
+    image: harnessrouter/harnessrouter:0.36.0@sha256:42223fddfb1dcad128d1943ab4f8306ec905eeaf282da64417c995d814af24d7
+    restart: unless-stopped
+    environment:
+      PORT: '3000'
+      HR_BACKENDS: claude,codex,opencode
+      HR_AUTH_USER: harnessrouter
+      HR_AUTH_PASSWORD: ${HR_TEST_PASSWORD:-local-test-only-console-password}
+      HR_SECRET_KEY: ${HR_TEST_SECRET_KEY:-local-test-only-secret-key}
+    ports:
+      - '127.0.0.1:${HR_TEST_PORT:-13000}:3000'
+    volumes:
+      - data:/data
+    depends_on:
+      - mock
+
+  mock:
+    image: python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
+    restart: unless-stopped
+    command: ['python', '-I', '/mock/mock_openai.py']
+    environment:
+      MOCK_PORT: '8080'
+    volumes:
+      - ./tests/mock:/mock:ro
+
+volumes:
+  data:
