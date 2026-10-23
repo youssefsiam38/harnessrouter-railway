@@ -62,31 +62,31 @@ bases=$(jget "$jar" /v1/bases)
 assert_contains "the codex base is listed" '"id":"codex"' "$bases"
 assert_contains "the opencode base is listed" '"id":"opencode"' "$bases"
 
-section "API key and custom harness"
+section "API key"
 mint_key "$jar" live-smoke "$hdr" && pass "an API key is minted" || die "could not mint a key"
 assert_eq "the key lists harnesses" "200" "$(bcode "$hdr" /v1/harnesses)"
 assert_eq "a made-up bearer key is rejected" "401" "$(http_code -H 'Authorization: Bearer sk-hr-not-a-real-key' "$API/v1/harnesses")"
-hid=$(curl -s --max-time 60 -H @"$hdr" -H 'Content-Type: application/json' \
-  --data '{"name":"Live Smoke Agent","base":"opencode","default_model":"mock-model"}' "$API/v1/harnesses" | jq -r '.id // empty')
-[ -n "$hid" ] && pass "a custom harness is created" || fail "harness create failed"
 
 if [ -z "${MOCK_BASE_URL:-}" ]; then
-  echo "  SKIP  agent turns (MOCK_BASE_URL unset)"
-  printf 'HID=%s\nSID=\n' "$hid" > "$HR_STATE_DIR/ids"
+  echo "  SKIP  provider connection, custom harness and agent turns (MOCK_BASE_URL unset)"
   summary; exit $?
 fi
 
 section "connect a provider (the private mock) and run real turns"
+# The provider first: a harness's default_model must be a model some connection serves.
 assert_contains "the integrations document is saved" '"ok":true' "$(put_mock_integrations "$jar" "$MOCK_BASE_URL")"
+hid=$(curl -s --max-time 60 -H @"$hdr" -H 'Content-Type: application/json' \
+  --data '{"name":"Live Smoke Agent","base":"opencode","default_model":"mock-model"}' "$API/v1/harnesses" | jq -r '.id // empty')
+[ -n "$hid" ] && pass "a custom harness is created" || die "harness create failed"
 r=$(run_turn_cookie "$jar" opencode mock-model)
 assert_contains "an opencode turn returns the provider's answer" "$EXPECT_ANSWER" "$(answer_of "$r")"
 r=$(run_turn_cookie "$jar" codex mock-resp)
 assert_contains "a codex turn returns the provider's answer" "$EXPECT_ANSWER" "$(answer_of "$r")"
-r=$(run_turn_bearer "$hdr" "${hid:-opencode}" mock-model)
+r=$(run_turn_bearer "$hdr" "$hid" mock-model)
 assert_contains "the custom harness runs a turn over the API key" "$EXPECT_ANSWER" "$(answer_of "$r")"
 sid=$(jq -r '.metadata.session_id // empty' <<<"$r" 2>/dev/null)
 [ -n "$sid" ] && pass "the turn names its session" || fail "no session id"
-r=$(run_turn_bearer "$hdr" "${hid:-opencode}" mock-model "$sid")
+r=$(run_turn_bearer "$hdr" "$hid" mock-model "$sid")
 assert_contains "a follow-up turn continues the session" "$EXPECT_ANSWER" "$(answer_of "$r")"
 assert_eq "the session lists both turns" "2" "$(bget "$hdr" "/v1/sessions/$sid/turns" | jq '.turns | length')"
 assert_contains "a file is written to the session workspace" '"written":true' \

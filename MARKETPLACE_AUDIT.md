@@ -40,10 +40,10 @@ live e2e tests.
 
 | Suite | Assertions | What it proves |
 |---|---|---|
-| `tests/static.sh` | see CI | Compose shape, pins, config, docs, secret scan |
+| `tests/static.sh` | 41 | Compose shape, pins, config, docs, secret scan |
 | `tests/smoke.sh` | 32 | Lean first boot, gate, login, real opencode + codex turns, API key, custom harness, session follow-up, files |
 | `tests/persistence.sh` | 12 | Integration, key, harness, session, file survive a container recreate; CLIs not reinstalled |
-| `tests/railway-smoke.sh` | live | The same flows over HTTPS on a clean-room deploy of the template, then `--verify` after a redeploy |
+| `tests/railway-smoke.sh` | 25 live + 16 after redeploy | The same flows over HTTPS on a clean-room deploy of the template (private mock sidecar), then `--verify` after a redeploy |
 
 ## Deploy-time inputs
 

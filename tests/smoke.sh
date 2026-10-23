@@ -67,13 +67,13 @@ assert_eq "the key lists harnesses" "200" "$(bcode "$hdr" /v1/harnesses)"
 h=$(curl -s --max-time 60 -H @"$hdr" -H 'Content-Type: application/json' \
   --data '{"name":"Template Smoke Agent","base":"opencode","default_model":"mock-model"}' "$API/v1/harnesses")
 hid=$(jq -r '.id // empty' <<<"$h" 2>/dev/null)
-[ -n "$hid" ] && pass "a custom harness is created" || fail "harness create: $(head -c 300 <<<"$h")"
-r=$(run_turn_bearer "$hdr" "${hid:-opencode}" mock-model)
+[ -n "$hid" ] && pass "a custom harness is created" || die "harness create: $(head -c 300 <<<"$h")"
+r=$(run_turn_bearer "$hdr" "$hid" mock-model)
 assert_contains "the custom harness runs a turn over the API" "$EXPECT_ANSWER" "$(answer_of "$r")"
 sid=$(jq -r '.metadata.session_id // empty' <<<"$r" 2>/dev/null)
 [ -n "$sid" ] && pass "the turn names its session" || fail "no session id in the response"
 assert_eq "the session is readable with the key" "200" "$(bcode "$hdr" "/v1/sessions/$sid")"
-r=$(run_turn_bearer "$hdr" "${hid:-opencode}" mock-model "$sid")
+r=$(run_turn_bearer "$hdr" "$hid" mock-model "$sid")
 assert_contains "a follow-up turn continues the same session" "$EXPECT_ANSWER" "$(answer_of "$r")"
 assert_eq "the session lists both turns" "2" "$(bget "$hdr" "/v1/sessions/$sid/turns" | jq '.turns | length' 2>/dev/null)"
 assert_contains "a file is written to the session workspace" '"written":true' \
