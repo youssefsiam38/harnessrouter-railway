@@ -42,7 +42,7 @@ env_json=$(jq -c '.services.app.environment' <<<"$cfg")
 assert_eq "PORT matches the console port" "3000" "$(jq -r .PORT <<<"$env_json")"
 assert_eq "the backend set is lean" "claude,codex,opencode" "$(jq -r .HR_BACKENDS <<<"$env_json")"
 assert_eq "the console user is set" "harnessrouter" "$(jq -r .HR_AUTH_USER <<<"$env_json")"
-assert_contains "the compose console password is a local placeholder" 'local-test-only' "$(jq -r .HR_AUTH_PASSWORD <<<"$env_json")"
+assert_contains "the compose console password defaults to a local placeholder" 'HR_AUTH_PASSWORD: ${HR_TEST_PASSWORD:-local-test-only' "$(cat compose.yaml)"
 assert_eq "HR_SECRET_KEY is wired" "true" "$(jq -r 'has("HR_SECRET_KEY")' <<<"$env_json")"
 assert_eq "the login gate is not disabled" "null" "$(jq -r '.HR_AUTH_DISABLED // "null"' <<<"$env_json")"
 
