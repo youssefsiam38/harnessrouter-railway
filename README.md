@@ -1,5 +1,7 @@
 # HarnessRouter on Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/harnessrouter-2)
+
 One-click Railway template for [HarnessRouter Community Edition](https://github.com/HarnessRouter/harnessrouter),
 the self-hosted unified interface for agent harnesses: run Codex, Claude Code, OpenCode and more
 through one OpenAI Responses-compatible API, with sessions, streaming, files and cancellation.
